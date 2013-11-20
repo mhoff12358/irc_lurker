@@ -1,0 +1,6 @@
+database_file:log.db
+password:BADBEN
+host:irc.foonetic.net
+port:7000
+nick:PAChecker
+channel:#pachecktest
