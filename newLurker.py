@@ -20,6 +20,21 @@ def loadSettings(settingfiles = ["settings.txt"]):
 	return settings
 
 class CoreBot(object):
+	default_server_handles = {}
+	default_user_handles = {}
+
+	@classmethod
+	def get_default_user_handles(cls):
+		out_dict = {}
+		out_dict.update(cls.default_user_handles)
+		return out_dict
+
+	@classmethod
+	def get_default_server_handles(cls):
+		out_dict = {}
+		out_dict.update(cls.default_server_handles)
+		return out_dict
+
 	def __init__(self):
 		#Loads the settings, should load any arbitrary settings that get set in the file
 		self.settings = loadSettings()
@@ -29,10 +44,10 @@ class CoreBot(object):
 		self.readBuffer = ""
 		self.lines = []
 
-		self.connectToServer()
+		self.server_handles = self.__class__.get_default_server_handles()
+		self.user_handles = self.__class__.get_default_user_handles()
 
 	def connectToServer(self):
-
 		#Connects to the irc and sets the lurker's information
 		self.sock.connect((self.settings['host'], int(self.settings['port'])))
 		#We want a non-blocking socket
@@ -119,10 +134,33 @@ class CoreBot(object):
 					self.handleUser(usermat.groups())
 
 	def handleServer(self, match):
-		pass
+		for serv_hand in self.server_handles.values():
+			serv_hand(match)
 
 	def handleUser(self, match):
-		pass
+		for user_hand in self.user_handles.values():
+			user_hand(match)
+
+	def add_handle(self, handle_type, name, function):
+		if handle_type == "user":
+			handles = self.user_handles
+		else:
+			handles = self.server_handles
+		handles['name'] = function
+
+class Recorder(CoreBot):
+	# default_user_handles = 
+
+	def __init__(self):
+		super(Recorder, self).__init__()
+
+		self.outfile = open("output/out_log.txt", 'a')
+		self.add_handle('user', 'logger', self.log_user_input)
+
+	def log_user_input(self, user_in):
+		print user_in
+		self.outfile.write(str(user_in)+"\n")
 
 if __name__ == "__main__":
-	client = CoreBot()
+	client = Recorder()
+	client.connectToServer()
